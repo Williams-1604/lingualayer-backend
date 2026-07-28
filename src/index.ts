@@ -25,13 +25,3 @@ buildServer()
     console.error(err);
     process.exit(1);
   });
-
-// improvement #10
-
-// improvement #13
-
-// improvement #18
-
-// improvement #31
-
-// improvement #33
