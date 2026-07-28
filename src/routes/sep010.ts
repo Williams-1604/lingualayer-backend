@@ -9,6 +9,7 @@ export const sep010Routes: FastifyPluginAsync = async (app) => {
   // SEP-0010 challenge endpoint
   app.get("/auth/challenge", async (req, reply) => {
     const { address } = req.query as { address: string };
+    if (!address) return reply.status(400).send({ error: "address required" });
     if (!address) {
       reply.status(400).send({ error: "address required" });
       return;
