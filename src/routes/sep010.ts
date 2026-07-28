@@ -10,6 +10,10 @@ export const sep010Routes: FastifyPluginAsync = async (app) => {
   app.get("/auth/challenge", async (req, reply) => {
     const { address } = req.query as { address: string };
     if (!address) return reply.status(400).send({ error: "address required" });
+    if (!address) {
+      reply.status(400).send({ error: "address required" });
+      return;
+    }
 
     const nonce = Math.random().toString(36).slice(2);
     // Build SEP-0010 challenge transaction
