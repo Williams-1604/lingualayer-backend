@@ -7,9 +7,9 @@ const NETWORK_PASSPHRASE = process.env.STELLAR_NETWORK === "mainnet"
 
 export const sep010Routes: FastifyPluginAsync = async (app) => {
   // SEP-0010 challenge endpoint
-  app.get("/auth/challenge", async (req) => {
+  app.get("/auth/challenge", async (req, reply) => {
     const { address } = req.query as { address: string };
-    if (!address) throw app.httpErrors.badRequest("address required");
+    if (!address) return reply.status(400).send({ error: "address required" });
 
     const nonce = Math.random().toString(36).slice(2);
     // Build SEP-0010 challenge transaction
