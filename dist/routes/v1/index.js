@@ -1,4 +1,5 @@
 import { sep010Routes } from "../sep010.js";
+import { commissionRoutes } from "./commissions.js";
 export const v1Routes = async (app) => {
     app.get("/meta", async () => ({
         name: "lingualayer-api",
@@ -6,6 +7,7 @@ export const v1Routes = async (app) => {
         description: "REST facade for Soroban contracts and indexers (scaffold).",
     }));
     await app.register(sep010Routes);
+    await app.register(commissionRoutes);
     // TODO: routes for contract invocation prep, webhook ingestion, admin ops
 };
 // improvement #17
