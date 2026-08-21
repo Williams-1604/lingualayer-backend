@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { registry } from "../metrics.js";
 
 export const healthRoutes: FastifyPluginAsync = async (app) => {
   app.get("/health", async () => ({
@@ -6,6 +7,11 @@ export const healthRoutes: FastifyPluginAsync = async (app) => {
     service: "api",
     timestamp: new Date().toISOString(),
   }));
+
+  app.get("/metrics", async (_req, reply) => {
+    reply.header("Content-Type", registry.contentType);
+    return registry.metrics();
+  });
 };
 
 // improvement #15

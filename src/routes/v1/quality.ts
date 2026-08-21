@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { qualityOracleAttestationsTotal } from "../../metrics.js";
 
 export const qualityRoutes: FastifyPluginAsync = async (app) => {
   app.get("/datasets/:id/quality", async (req) => {
@@ -14,6 +15,7 @@ export const qualityRoutes: FastifyPluginAsync = async (app) => {
   });
 
   app.post("/quality/attest/prepare", async (req) => {
+    qualityOracleAttestationsTotal.inc();
     // Prepare unsigned XDR for QualityOracle.attest_quality()
     return { xdr: "" };
   });
