@@ -1,5 +1,6 @@
 import { Horizon } from "@stellar/stellar-sdk";
-import { getCommissionById, listCommissions, } from "../../services/commission-indexer.js";
+import { getCommissionById, upsertCommission, listCommissions, } from "../../services/commission-indexer.js";
+import { sendCommissionFulfilmentEmail } from "../../services/notifications.js";
 const VALID_STATES = ["open", "fulfilled", "cancelled"];
 export const commissionRoutes = async (app) => {
     app.get("/commissions", async (req, reply) => {
@@ -20,6 +21,24 @@ export const commissionRoutes = async (app) => {
             return reply.status(404).send({ error: "commission not found" });
         }
         return commission;
+    });
+    app.post("/commissions/:id/fulfil", async (req, reply) => {
+        const { id } = req.params;
+        const { notifyEmail } = (req.body ?? {});
+        const commission = getCommissionById(id);
+        if (!commission) {
+            return reply.status(404).send({ error: "commission not found" });
+        }
+        if (commission.state === "fulfilled") {
+            return reply.status(409).send({ error: "commission already fulfilled" });
+        }
+        const fulfilled = { ...commission, state: "fulfilled" };
+        upsertCommission(fulfilled);
+        let emailSent = false;
+        if (notifyEmail) {
+            emailSent = await sendCommissionFulfilmentEmail(notifyEmail, fulfilled);
+        }
+        return { commission: fulfilled, emailSent };
     });
     app.post("/commissions/prepare", async (req, reply) => {
         const { commissioner, bountyAmountUsdc } = req.body;
