@@ -1,6 +1,7 @@
 import { sep010Routes } from "../sep010.js";
 import { commissionRoutes } from "./commissions.js";
 import { qualityRoutes } from "./quality.js";
+import { reportRoutes } from "./reports.js";
 export const v1Routes = async (app) => {
     app.get("/meta", async () => ({
         name: "lingualayer-api",
@@ -10,9 +11,9 @@ export const v1Routes = async (app) => {
     await app.register(sep010Routes);
     await app.register(commissionRoutes);
     await app.register(qualityRoutes);
+    await app.register(reportRoutes);
     // TODO: routes for contract invocation prep, webhook ingestion, admin ops
 };
 // improvement #17
 // improvement #19
 // improvement #27
-// improvement #29
