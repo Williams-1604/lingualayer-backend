@@ -18,6 +18,9 @@ const schema = z.object({
   JWT_TTL_SECONDS: z.coerce.number().default(3600),
 
   // DataCommission event indexer (GET /commissions, GET /commissions/:id)
+  SOROBAN_RPC_URL: z.string().optional(),
+  DATA_COMMISSION_CONTRACT_ID: z.string().optional(),
+  COMMISSION_INDEXER_POLL_INTERVAL_MS: z.coerce.number().default(5000),
   DATA_COMMISSION_CONTRACT_ID: z.string().optional(),
   COMMISSION_INDEXER_POLL_INTERVAL_MS: z.coerce.number().default(5000),
   SOROBAN_RPC_URL: z.string().default("https://soroban-testnet.stellar.org"),
