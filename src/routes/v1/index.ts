@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { walletConfigRoutes } from "./wallet-config.js";
 import { contributorRoutes } from "./contributors.js";
 
 export const v1Routes: FastifyPluginAsync = async (app) => {
@@ -8,6 +9,7 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
     description: "REST facade for Soroban contracts and indexers (scaffold).",
   }));
 
+  await app.register(walletConfigRoutes);
   await app.register(contributorRoutes);
 
   // TODO: routes for contract invocation prep, webhook ingestion, admin ops
