@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const schema = z.object({
   NODE_ENV: z.string().default("development"),
+  JWT_SECRET: z.string().default("dev-insecure-secret-change-in-production"),
   PORT: z.coerce.number().default(8080),
   API_PREFIX: z.string().default("/api/v1"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
@@ -20,12 +21,18 @@ const schema = z.object({
   SOROBAN_RPC_URL: z.string().optional(),
   DATA_COMMISSION_CONTRACT_ID: z.string().optional(),
   COMMISSION_INDEXER_POLL_INTERVAL_MS: z.coerce.number().default(5000),
+  DATA_COMMISSION_CONTRACT_ID: z.string().optional(),
+  COMMISSION_INDEXER_POLL_INTERVAL_MS: z.coerce.number().default(5000),
+  SOROBAN_RPC_URL: z.string().default("https://soroban-testnet.stellar.org"),
+  DATASET_REGISTRY_CONTRACT_ID: z.string().optional(),
+  LICENSE_CONTRACT_ID: z.string().optional(),
 });
 
 const raw = schema.parse(process.env);
 
 export const config = {
   nodeEnv: raw.NODE_ENV,
+  jwtSecret: raw.JWT_SECRET,
   port: raw.PORT,
   apiPrefix: raw.API_PREFIX,
   corsOrigin: raw.CORS_ORIGIN,
@@ -41,6 +48,8 @@ export const config = {
   sorobanRpcUrl: raw.SOROBAN_RPC_URL,
   dataCommissionContractId: raw.DATA_COMMISSION_CONTRACT_ID,
   commissionIndexerPollIntervalMs: raw.COMMISSION_INDEXER_POLL_INTERVAL_MS,
+  datasetRegistryContractId: raw.DATASET_REGISTRY_CONTRACT_ID,
+  licenseContractId: raw.LICENSE_CONTRACT_ID,
 };
 
 // improvement #9

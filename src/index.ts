@@ -1,8 +1,10 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import websocket from "@fastify/websocket";
 import { config } from "./config/env.js";
 import { healthRoutes } from "./routes/health.js";
 import { v1Routes } from "./routes/v1/index.js";
+import { wsRoutes } from "./routes/ws.js";
 import { startCommissionIndexer } from "./services/commission-indexer.js";
 import { recordHttpRequest, renderMetrics } from "./metrics.js";
 
@@ -15,6 +17,7 @@ async function buildServer() {
     origin: config.corsOrigin,
   });
 
+  await app.register(websocket);
   app.addHook("onResponse", async (req, reply) => {
     recordHttpRequest(req.routeOptions?.url ?? req.url, reply.statusCode);
   });
@@ -26,6 +29,7 @@ async function buildServer() {
 
   await app.register(healthRoutes);
   await app.register(v1Routes, { prefix: config.apiPrefix });
+  await app.register(wsRoutes);
 
   return app;
 }
