@@ -39,7 +39,12 @@ test("POST /commissions/prepare - 422 on insufficient USDC", async (t) => {
     url: "/commissions/prepare",
     payload: {
       commissioner: "GAQ35U6Z27A6C3W3I2YQY33DCR3FDR27XDFV7Q4O2PCHZZTCRWNN2QYB",
-      bountyAmountUsdc: 50
+      language_code: "yo",
+      bounty_amount_usdc: 50,
+      description_markdown: "# Yoruba proverbs dataset",
+      min_sample_count: 100,
+      min_duration_hours: 1,
+      deadline_days: 14
     }
   });
 
