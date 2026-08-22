@@ -80,3 +80,49 @@ test("GET /commissions/:id returns 404 for an unknown commission", async () => {
     const response = await app.inject({ method: "GET", url: "/commissions/does-not-exist" });
     assert.strictEqual(response.statusCode, 404);
 });
+test("POST /commissions/:id/fulfil marks the commission fulfilled", async () => {
+    const { upsertCommission, resetCommissionStore, getCommissionById } = await import("../../services/commission-indexer.js");
+    resetCommissionStore();
+    upsertCommission({
+        id: "c1",
+        commissioner: "GABC",
+        bountyAmountUsdc: 100,
+        languageCode: "yo",
+        state: "open",
+        createdLedger: 1,
+        updatedLedger: 1,
+    });
+    const app = Fastify();
+    await app.register(commissionRoutes);
+    const response = await app.inject({ method: "POST", url: "/commissions/c1/fulfil", payload: {} });
+    assert.strictEqual(response.statusCode, 200);
+    const body = response.json();
+    assert.strictEqual(body.commission.state, "fulfilled");
+    assert.strictEqual(body.emailSent, false);
+    assert.strictEqual(getCommissionById("c1")?.state, "fulfilled");
+});
+test("POST /commissions/:id/fulfil returns 404 for an unknown commission", async () => {
+    const { resetCommissionStore } = await import("../../services/commission-indexer.js");
+    resetCommissionStore();
+    const app = Fastify();
+    await app.register(commissionRoutes);
+    const response = await app.inject({ method: "POST", url: "/commissions/nope/fulfil", payload: {} });
+    assert.strictEqual(response.statusCode, 404);
+});
+test("POST /commissions/:id/fulfil returns 409 if already fulfilled", async () => {
+    const { upsertCommission, resetCommissionStore } = await import("../../services/commission-indexer.js");
+    resetCommissionStore();
+    upsertCommission({
+        id: "c1",
+        commissioner: "GABC",
+        bountyAmountUsdc: 100,
+        languageCode: "yo",
+        state: "fulfilled",
+        createdLedger: 1,
+        updatedLedger: 1,
+    });
+    const app = Fastify();
+    await app.register(commissionRoutes);
+    const response = await app.inject({ method: "POST", url: "/commissions/c1/fulfil", payload: {} });
+    assert.strictEqual(response.statusCode, 409);
+});

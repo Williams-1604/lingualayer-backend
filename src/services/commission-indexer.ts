@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import { rpc, scValToNative } from "@stellar/stellar-sdk";
+import { dataCommissionEventsIndexedTotal } from "../metrics.js";
 
 export type CommissionState = "open" | "fulfilled" | "cancelled";
 
@@ -144,7 +145,10 @@ export function startCommissionIndexer(options: IndexerOptions): { stop: () => v
 
       for (const event of response.events) {
         const parsed = parseCommissionEvent(event);
-        if (parsed) upsertCommission(parsed.commission);
+        if (parsed) {
+          upsertCommission(parsed.commission);
+          dataCommissionEventsIndexedTotal.inc({ kind: parsed.kind });
+        }
       }
 
       cursor = response.cursor;

@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { registry } from "../metrics.js";
 
 // Readiness state: false until the process has finished whatever startup
 // work makes it safe to receive traffic (e.g. the indexer has caught up).
@@ -10,6 +11,17 @@ export function setReady(value: boolean) {
 }
 
 export const healthRoutes: FastifyPluginAsync = async (app) => {
+  app.get("/health", async () => ({
+    status: "ok",
+    service: "api",
+    timestamp: new Date().toISOString(),
+  }));
+
+  app.get("/metrics", async (_req, reply) => {
+    reply.header("Content-Type", registry.contentType);
+    return registry.metrics();
+  });
+};
   app.get("/health", async (_req, reply) => {
     const body = {
       status: ready ? "ok" : "degraded",

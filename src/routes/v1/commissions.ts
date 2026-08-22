@@ -2,9 +2,11 @@ import type { FastifyPluginAsync } from "fastify";
 import { Horizon } from "@stellar/stellar-sdk";
 import {
   getCommissionById,
+  upsertCommission,
   listCommissions,
   type CommissionState,
 } from "../../services/commission-indexer.js";
+import { sendCommissionFulfilmentEmail } from "../../services/notifications.js";
 
 const VALID_STATES: CommissionState[] = ["open", "fulfilled", "cancelled"];
 import { z } from "zod";
@@ -72,6 +74,29 @@ export const commissionRoutes: FastifyPluginAsync = async (app) => {
       return reply.status(404).send({ error: "commission not found" });
     }
     return commission;
+  });
+
+  app.post("/commissions/:id/fulfil", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const { notifyEmail } = (req.body ?? {}) as { notifyEmail?: string };
+
+    const commission = getCommissionById(id);
+    if (!commission) {
+      return reply.status(404).send({ error: "commission not found" });
+    }
+    if (commission.state === "fulfilled") {
+      return reply.status(409).send({ error: "commission already fulfilled" });
+    }
+
+    const fulfilled = { ...commission, state: "fulfilled" as const };
+    upsertCommission(fulfilled);
+
+    let emailSent = false;
+    if (notifyEmail) {
+      emailSent = await sendCommissionFulfilmentEmail(notifyEmail, fulfilled);
+    }
+
+    return { commission: fulfilled, emailSent };
   });
 
   app.post("/commissions/prepare", async (req, reply) => {
