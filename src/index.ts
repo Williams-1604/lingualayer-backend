@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { config } from "./config/env.js";
 import { healthRoutes } from "./routes/health.js";
+import { sep010Routes } from "./routes/sep010.js";
 import { v1Routes } from "./routes/v1/index.js";
 
 async function buildServer() {
@@ -12,6 +13,7 @@ async function buildServer() {
   });
 
   await app.register(healthRoutes);
+  await app.register(sep010Routes);
   await app.register(v1Routes, { prefix: config.apiPrefix });
 
   return app;
