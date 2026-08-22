@@ -39,7 +39,12 @@ test("POST /commissions/prepare - 422 on insufficient USDC", async (t) => {
     url: "/commissions/prepare",
     payload: {
       commissioner: "GAQ35U6Z27A6C3W3I2YQY33DCR3FDR27XDFV7Q4O2PCHZZTCRWNN2QYB",
-      bountyAmountUsdc: 50
+      language_code: "yo",
+      bounty_amount_usdc: 50,
+      description_markdown: "# Yoruba proverbs dataset",
+      min_sample_count: 100,
+      min_duration_hours: 1,
+      deadline_days: 14
     }
   });
 
@@ -51,4 +56,46 @@ test("POST /commissions/prepare - 422 on insufficient USDC", async (t) => {
   assert.strictEqual(response.statusCode, 422);
   const body = JSON.parse(response.payload);
   assert.strictEqual(body.error, "Insufficient USDC: need 50, have 10.0000000");
+});
+
+test("GET /commissions returns paginated indexed commissions", async () => {
+  const { upsertCommission, resetCommissionStore } = await import("../../services/commission-indexer.js");
+  resetCommissionStore();
+  upsertCommission({
+    id: "c1",
+    commissioner: "GABC",
+    bountyAmountUsdc: 100,
+    languageCode: "yo",
+    state: "open",
+    createdLedger: 1,
+    updatedLedger: 1,
+  });
+
+  const app = Fastify();
+  await app.register(commissionRoutes);
+
+  const response = await app.inject({ method: "GET", url: "/commissions" });
+  assert.strictEqual(response.statusCode, 200);
+  const body = response.json();
+  assert.strictEqual(body.total, 1);
+  assert.strictEqual(body.items[0].id, "c1");
+});
+
+test("GET /commissions?state=invalid returns 400", async () => {
+  const app = Fastify();
+  await app.register(commissionRoutes);
+
+  const response = await app.inject({ method: "GET", url: "/commissions?state=bogus" });
+  assert.strictEqual(response.statusCode, 400);
+});
+
+test("GET /commissions/:id returns 404 for an unknown commission", async () => {
+  const { resetCommissionStore } = await import("../../services/commission-indexer.js");
+  resetCommissionStore();
+
+  const app = Fastify();
+  await app.register(commissionRoutes);
+
+  const response = await app.inject({ method: "GET", url: "/commissions/does-not-exist" });
+  assert.strictEqual(response.statusCode, 404);
 });
