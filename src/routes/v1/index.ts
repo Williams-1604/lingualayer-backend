@@ -1,6 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
 import { sep010Routes } from "../sep010.js";
 import { commissionRoutes } from "./commissions.js";
+import { qualityRoutes } from "./quality.js";
+import { reportRoutes } from "./reports.js";
 import { rolesRoutes } from "./roles.js";
 import { sep010Routes } from "../sep010.js";
 import { commissionRoutes } from "./commissions.js";
@@ -19,6 +21,8 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
 
   await app.register(sep010Routes);
   await app.register(commissionRoutes);
+  await app.register(qualityRoutes);
+  await app.register(reportRoutes);
   // TODO: routes for contract invocation prep, webhook ingestion
 
   await app.register(rolesRoutes);
@@ -27,8 +31,6 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
   await app.register(txRoutes);
 
   // TODO: routes for webhook ingestion, admin ops
-  await app.register(qualityRoutes);
-  await app.register(commissionRoutes);
   await app.register(walletConfigRoutes);
   await app.register(contributorRoutes);
 
@@ -40,5 +42,3 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
 // improvement #19
 
 // improvement #27
-
-// improvement #29

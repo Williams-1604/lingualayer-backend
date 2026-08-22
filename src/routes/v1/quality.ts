@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { qualityOracleAttestationsTotal } from "../../metrics.js";
+import { getLeaderboard, recordAttestation } from "../../services/curator-stats.js";
 import { z } from "zod";
 import {
   BASE_FEE,
@@ -69,6 +70,18 @@ export const qualityRoutes: FastifyPluginAsync = async (app) => {
     // Prepare unsigned XDR for QualityOracle.attest_quality()
     return { xdr: "" };
   app.post("/quality/attest/prepare", async (req, reply) => {
+    const { curator, score } = (req.body ?? {}) as { curator?: string; score?: number };
+    if (!curator || typeof score !== "number") {
+      return reply.status(400).send({ error: "curator and numeric score are required" });
+    }
+
+    qualityOracleAttestationsTotal.inc();
+    recordAttestation(curator, score);
+    // Prepare unsigned XDR for QualityOracle.attest_quality()
+    return { xdr: "" };
+
+  });
+
     const parsed = prepareBodySchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: "Invalid request body", details: parsed.error.flatten() });
@@ -139,5 +152,10 @@ export const qualityRoutes: FastifyPluginAsync = async (app) => {
     tx = rpc.assembleTransaction(tx, sim).build();
 
     return { xdr: tx.toXDR() };
+  });
+
+  app.get("/quality/leaderboard", async (req) => {
+    const { limit = "20" } = req.query as Record<string, string>;
+    return { curators: getLeaderboard(Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100)) };
   });
 };
