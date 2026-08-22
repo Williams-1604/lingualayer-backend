@@ -1,8 +1,11 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import websocket from "@fastify/websocket";
 import { config } from "./config/env.js";
 import { healthRoutes } from "./routes/health.js";
 import { v1Routes } from "./routes/v1/index.js";
+import { wsRoutes } from "./routes/ws.js";
+import { startCommissionIndexer } from "./services/commission-indexer.js";
 import { recordHttpRequest, renderMetrics } from "./metrics.js";
 
 const SHUTDOWN_DRAIN_MS = 15_000;
@@ -14,6 +17,7 @@ async function buildServer() {
     origin: config.corsOrigin,
   });
 
+  await app.register(websocket);
   app.addHook("onResponse", async (req, reply) => {
     recordHttpRequest(req.routeOptions?.url ?? req.url, reply.statusCode);
   });
@@ -25,6 +29,7 @@ async function buildServer() {
 
   await app.register(healthRoutes);
   await app.register(v1Routes, { prefix: config.apiPrefix });
+  await app.register(wsRoutes);
 
   return app;
 }
@@ -57,6 +62,21 @@ function registerGracefulShutdown(app: Awaited<ReturnType<typeof buildServer>>) 
 }
 
 buildServer()
+  .then((app) => {
+    if (config.sorobanRpcUrl && config.dataCommissionContractId) {
+      startCommissionIndexer({
+        rpcUrl: config.sorobanRpcUrl,
+        contractId: config.dataCommissionContractId,
+        pollIntervalMs: config.commissionIndexerPollIntervalMs,
+      });
+    } else {
+      app.log.warn(
+        "SOROBAN_RPC_URL/DATA_COMMISSION_CONTRACT_ID not set — commission indexer disabled",
+      );
+    }
+    return app.listen({ port: config.port, host: "0.0.0.0" });
+  });
+
   .then(async (app) => {
     registerGracefulShutdown(app);
     await app.listen({ port: config.port, host: "0.0.0.0" });

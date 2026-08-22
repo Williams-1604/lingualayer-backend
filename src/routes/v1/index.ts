@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 import { sep010Routes } from "../sep010.js";
+import { commissionRoutes } from "./commissions.js";
 import { txRoutes } from "./tx.js";
 import { qualityRoutes } from "./quality.js";
 import { commissionRoutes } from "./commissions.js";
@@ -14,6 +15,7 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
   }));
 
   await app.register(sep010Routes);
+  await app.register(commissionRoutes);
   await app.register(txRoutes);
 
   // TODO: routes for webhook ingestion, admin ops

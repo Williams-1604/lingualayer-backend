@@ -15,6 +15,10 @@ const schema = z.object({
   SEP10_CHALLENGE_TIMEOUT_SECONDS: z.coerce.number().default(300),
   JWT_SECRET: z.string().default("dev-insecure-jwt-secret-change-me"),
   JWT_TTL_SECONDS: z.coerce.number().default(3600),
+
+  // DataCommission event indexer (GET /commissions, GET /commissions/:id)
+  DATA_COMMISSION_CONTRACT_ID: z.string().optional(),
+  COMMISSION_INDEXER_POLL_INTERVAL_MS: z.coerce.number().default(5000),
   SOROBAN_RPC_URL: z.string().default("https://soroban-testnet.stellar.org"),
   DATASET_REGISTRY_CONTRACT_ID: z.string().optional(),
   LICENSE_CONTRACT_ID: z.string().optional(),
@@ -35,7 +39,10 @@ export const config = {
   sep10ChallengeTimeoutSeconds: raw.SEP10_CHALLENGE_TIMEOUT_SECONDS,
   jwtSecret: raw.JWT_SECRET,
   jwtTtlSeconds: raw.JWT_TTL_SECONDS,
+
   sorobanRpcUrl: raw.SOROBAN_RPC_URL,
+  dataCommissionContractId: raw.DATA_COMMISSION_CONTRACT_ID,
+  commissionIndexerPollIntervalMs: raw.COMMISSION_INDEXER_POLL_INTERVAL_MS,
   datasetRegistryContractId: raw.DATASET_REGISTRY_CONTRACT_ID,
   licenseContractId: raw.LICENSE_CONTRACT_ID,
 };

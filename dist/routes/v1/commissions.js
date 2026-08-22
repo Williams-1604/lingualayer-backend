@@ -1,19 +1,25 @@
 import { Horizon } from "@stellar/stellar-sdk";
+import { getCommissionById, listCommissions, } from "../../services/commission-indexer.js";
+const VALID_STATES = ["open", "fulfilled", "cancelled"];
 export const commissionRoutes = async (app) => {
-    app.get("/commissions", async (req) => {
-        const { state = "open", page = "1", limit = "20" } = req.query;
-        // TODO: query Prisma for commissions with state filter
-        return {
-            items: [],
-            total: 0,
-            page: parseInt(page),
-            limit: parseInt(limit),
-        };
+    app.get("/commissions", async (req, reply) => {
+        const { state, page = "1", limit = "20" } = req.query;
+        if (state && !VALID_STATES.includes(state)) {
+            return reply.status(400).send({ error: `state must be one of: ${VALID_STATES.join(", ")}` });
+        }
+        return listCommissions({
+            state: state,
+            page: Math.max(parseInt(page, 10) || 1, 1),
+            limit: Math.min(Math.max(parseInt(limit, 10) || 20, 1), 100),
+        });
     });
-    app.get("/commissions/:id", async (req) => {
+    app.get("/commissions/:id", async (req, reply) => {
         const { id } = req.params;
-        // TODO: fetch commission by ID from DB + on-chain data
-        return { id, state: "open" };
+        const commission = getCommissionById(id);
+        if (!commission) {
+            return reply.status(404).send({ error: "commission not found" });
+        }
+        return commission;
     });
     app.post("/commissions/prepare", async (req, reply) => {
         const { commissioner, bountyAmountUsdc } = req.body;
