@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { sep010Routes } from "../sep010.js";
 import { txRoutes } from "./tx.js";
 import { qualityRoutes } from "./quality.js";
 import { commissionRoutes } from "./commissions.js";
@@ -12,6 +13,7 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
     description: "REST facade for Soroban contracts and indexers (scaffold).",
   }));
 
+  await app.register(sep010Routes);
   await app.register(txRoutes);
 
   // TODO: routes for webhook ingestion, admin ops
@@ -22,8 +24,6 @@ export const v1Routes: FastifyPluginAsync = async (app) => {
 
   // TODO: routes for contract invocation prep, webhook ingestion, admin ops
 };
-
-// improvement #16
 
 // improvement #17
 
