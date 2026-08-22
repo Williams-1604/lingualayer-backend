@@ -12,6 +12,10 @@ export const qualityRoutes = async (app) => {
             royalty_multiplier_bps: 10000,
         };
     });
+    app.post("/quality/attest/prepare", async (req) => {
+        qualityOracleAttestationsTotal.inc();
+};
+
     app.post("/quality/attest/prepare", async (req, reply) => {
         const { curator, score } = (req.body ?? {});
         if (!curator || typeof score !== "number") {

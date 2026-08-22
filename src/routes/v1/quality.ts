@@ -65,6 +65,10 @@ export const qualityRoutes: FastifyPluginAsync = async (app) => {
     };
   });
 
+  app.post("/quality/attest/prepare", async (req) => {
+    qualityOracleAttestationsTotal.inc();
+    // Prepare unsigned XDR for QualityOracle.attest_quality()
+    return { xdr: "" };
   app.post("/quality/attest/prepare", async (req, reply) => {
     const { curator, score } = (req.body ?? {}) as { curator?: string; score?: number };
     if (!curator || typeof score !== "number") {
