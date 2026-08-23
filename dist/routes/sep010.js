@@ -1,30 +1,62 @@
-import { Keypair, Transaction, Networks } from "@stellar/stellar-sdk";
-const SERVER_KEYPAIR = Keypair.random(); // TODO: load from env
-const NETWORK_PASSPHRASE = process.env.STELLAR_NETWORK === "mainnet"
-    ? Networks.PUBLIC : Networks.TESTNET;
+import { Keypair, Networks, WebAuth } from "@stellar/stellar-sdk";
+import { config } from "../config/env.js";
+import { signJwt } from "../utils/jwt.js";
+// Falls back to an ephemeral random keypair when SEP10_SERVER_SECRET isn't
+// set so the service still boots in dev, but tokens issued by one process
+// won't verify against another — set the env var for anything but local dev.
+const SERVER_KEYPAIR = config.sep10ServerSecret
+    ? Keypair.fromSecret(config.sep10ServerSecret)
+    : Keypair.random();
+const NETWORK_PASSPHRASE = config.stellarNetwork === "mainnet" ? Networks.PUBLIC : Networks.TESTNET;
 export const sep010Routes = async (app) => {
     // SEP-0010 challenge endpoint
     app.get("/auth/challenge", async (req, reply) => {
-        const { address } = req.query;
-        if (!address)
-            return reply.status(400).send({ error: "address required" });
-        const nonce = Math.random().toString(36).slice(2);
-        // Build SEP-0010 challenge transaction
-        // In production: use stellar-sdk TransactionBuilder with manage_data op
+        const { account } = req.query;
+        if (!account)
+            return reply.status(400).send({ error: "account required" });
+        let transaction;
+        try {
+            transaction = WebAuth.buildChallengeTx(SERVER_KEYPAIR, account, config.sep10HomeDomain, config.sep10ChallengeTimeoutSeconds, NETWORK_PASSPHRASE, config.sep10WebAuthDomain);
+        }
+        catch (err) {
+            req.log.error(err, "failed to build SEP-10 challenge transaction");
+            return reply.status(400).send({ error: "invalid account" });
+        }
         return {
-            transaction: "", // XDR of challenge tx
+            transaction,
             network_passphrase: NETWORK_PASSPHRASE,
         };
     });
     // SEP-0010 token endpoint
-    app.post("/auth/token", async (req) => {
+    app.post("/auth/token", async (req, reply) => {
         const { transaction } = req.body;
-        // Verify the signed challenge transaction
-        // Check signature matches the claimed public key
-        // Issue JWT on success
+        if (!transaction) {
+            return reply.status(400).send({ error: "transaction required" });
+        }
+        let clientAccountID;
+        try {
+            const { clientAccountID: parsedClientAccountID } = WebAuth.readChallengeTx(transaction, SERVER_KEYPAIR.publicKey(), NETWORK_PASSPHRASE, [config.sep10HomeDomain], config.sep10WebAuthDomain);
+            clientAccountID = parsedClientAccountID;
+            // Full signature validation: confirms the server's own signature is
+            // present (challenge wasn't forged) AND that the claimed client
+            // account signed it too — a challenge that only carries the server's
+            // signature (i.e. was never actually presented to the wallet) is
+            // rejected here.
+            WebAuth.verifyChallengeTxSigners(transaction, SERVER_KEYPAIR.publicKey(), NETWORK_PASSPHRASE, [clientAccountID], [config.sep10HomeDomain], config.sep10WebAuthDomain);
+        }
+        catch (err) {
+            req.log.warn(err, "SEP-10 challenge verification failed");
+            return reply.status(401).send({ error: "invalid or unsigned challenge transaction" });
+        }
+        const now = Math.floor(Date.now() / 1000);
+        const token = signJwt({
+            sub: clientAccountID,
+            iat: now,
+            exp: now + config.jwtTtlSeconds,
+        }, config.jwtSecret);
         return {
-            token: "", // JWT
-            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token,
+            expires_at: now + config.jwtTtlSeconds,
         };
     });
 };

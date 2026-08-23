@@ -7,13 +7,19 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "db:backup": "bash scripts/backup.sh",
+    "db:restore": "tsx scripts/restore.ts",
+    "db:backup-health-check": "tsx scripts/backup-health-check.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
+    "@fastify/websocket": "^11.3.0",
+    "@sendgrid/mail": "^8.1.6",
     "@stellar/stellar-sdk": "^16.1.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
+    "prom-client": "^15.1.3",
     "zod": "^3.24.1"
   },
   "devDependencies": {
