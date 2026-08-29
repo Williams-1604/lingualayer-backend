@@ -6,6 +6,11 @@ const schema = z.object({
   JWT_SECRET: z.string().default("dev-insecure-secret-change-in-production"),
   PORT: z.coerce.number().default(8080),
   API_PREFIX: z.string().default("/api/v1"),
+  RATE_LIMIT_PUBLIC_MAX: z.coerce.number().int().positive().default(60),
+  RATE_LIMIT_AUTHENTICATED_MAX: z.coerce.number().int().positive().default(300),
+  RATE_LIMIT_TX_MAX: z.coerce.number().int().positive().default(10),
+  RATE_LIMIT_UPLOAD_MAX: z.coerce.number().int().positive().default(20),
+  REDIS_URL: z.string().optional(),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
 
   // SEP-0010 Web Authentication (GET /auth/challenge, POST /auth/token)
@@ -39,6 +44,11 @@ export const config = {
   jwtSecret: raw.JWT_SECRET,
   port: raw.PORT,
   apiPrefix: raw.API_PREFIX,
+  rateLimitPublicMax: raw.RATE_LIMIT_PUBLIC_MAX,
+  rateLimitAuthenticatedMax: raw.RATE_LIMIT_AUTHENTICATED_MAX,
+  rateLimitTxMax: raw.RATE_LIMIT_TX_MAX,
+  rateLimitUploadMax: raw.RATE_LIMIT_UPLOAD_MAX,
+  redisUrl: raw.REDIS_URL,
   corsOrigin: raw.CORS_ORIGIN,
 
   stellarNetwork: raw.STELLAR_NETWORK,
