@@ -1,7 +1,10 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import websocket from "@fastify/websocket";
 import { config } from "./config/env.js";
+import { isRedisAvailable, getRedisClient } from "./lib/redisClient.js";
+import { rateLimitKeyGenerator } from "./lib/rateLimit.js";
 import { healthRoutes } from "./routes/health.js";
 import { sep010Routes } from "./routes/sep010.js";
 import { v1Routes } from "./routes/v1/index.js";
@@ -18,6 +21,22 @@ async function buildServer() {
     origin: config.corsOrigin,
   });
 
+  // Global default covers the "public" tier (60 req/min per IP or JWT
+  // subject); routes needing a different tier override via
+  // `config.rateLimit` (see lib/rateLimit.ts). Backed by Redis when
+  // configured and reachable so limits survive a restart — falls back to
+  // the plugin's built-in in-memory store otherwise rather than failing
+  // to start.
+  const redisAvailable = await isRedisAvailable();
+  await app.register(rateLimit, {
+    max: config.rateLimitPublicMax,
+    timeWindow: "1 minute",
+    keyGenerator: rateLimitKeyGenerator,
+    redis: redisAvailable ? (getRedisClient() ?? undefined) : undefined,
+  });
+  if (config.redisUrl && !redisAvailable) {
+    app.log.warn("REDIS_URL is set but unreachable; rate limiting falling back to in-memory store");
+  }
   await app.register(websocket);
   app.addHook("onResponse", async (req, reply) => {
     recordHttpRequest(req.routeOptions?.url ?? req.url, reply.statusCode);
